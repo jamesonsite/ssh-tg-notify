@@ -15,10 +15,57 @@ Linux daemon that detects **successful SSH logins** and sends a **Telegram** mes
 - Parses OpenSSH **`Accepted …`** lines (password, publickey, etc.); not raw TCP connects.
 - Sends alerts with the Telegram Bot API (`sendMessage` only).
 
-## 1. Create the Telegram bot
+## 1. Create the Telegram bot and get a **chat id**
 
-1. Talk to [@BotFather](https://t.me/BotFather), create a bot, copy the **token** (format `123456789:AAH…`).
-2. Start a chat with your bot, send any message, then obtain your **chat id** (e.g. [@userinfobot](https://t.me/userinfobot) or the `getUpdates` API). Use the numeric id; group ids are often negative (e.g. `-100…`).
+### Bot token (from BotFather)
+
+1. In Telegram, open [@BotFather](https://t.me/BotFather).
+2. Send `/newbot` (or use an existing bot), follow the prompts, then copy the **token** BotFather gives you. It looks like `123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxx` — that string goes in `telegram.bot_token` in your config.
+
+### Chat id — what it is
+
+Telegram needs to know **where to deliver** each alert. That destination is a numeric **chat id**:
+
+- If alerts should go to **you personally** (DM), the chat id is **your Telegram user id** (a positive number).
+- If alerts should go to a **group**, the chat id is usually a **negative** number (often starting with `-100`).
+
+Your config field `telegram.chat_id` must be that number in quotes, e.g. `"123456789"` or `"-1001234567890"`.
+
+### Option A — Easiest for DMs only: [@userinfobot](https://t.me/userinfobot)
+
+This bot tells you **your own** user id. For “notify me in private,” that id is exactly what you use as `chat_id`.
+
+1. In Telegram, search for **`@userinfobot`** and open the chat.
+2. Tap **Start** (or send `/start`).
+3. It replies with your **Id** — a number like `123456789`.
+4. Put that in config as `chat_id: "123456789"` (same digits, with quotes).
+
+You should **still** open your **new** bot once and tap **Start** / send any message so Telegram has an active chat with it (some setups expect that).
+
+### Option B — Always works: `getUpdates` (DM or group)
+
+Use this if you want to double-check the id or you are sending to a **group**.
+
+1. Open a chat with **your** bot (the one you created with BotFather) and send any message, e.g. `hi`.
+2. In a browser, open this URL (paste your **real** token where shown):
+
+   `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+
+   Example: if your token is `123:ABC`, the URL is `https://api.telegram.org/bot123:ABC/getUpdates`
+
+3. You will see JSON. Find the first `"chat"` block and look for **`"id"`** next to it, for example:
+
+   `"chat":{"id":123456789,...}`
+
+4. That number is your **chat id**. For a **group**, repeat after posting a message **in the group** (you may need to add the bot to the group first); the id is often negative, e.g. `-1001234567890`.
+
+If `getUpdates` shows `"ok":true` but `"result":[]` (empty), you did not message your bot yet — go back to step 1.
+
+### Groups (short version)
+
+1. Add your bot to the group (group settings → add members → your bot).
+2. Send a normal message in the group (some bots need `/start@YourBotName` once).
+3. Call `getUpdates` again and read the **`"id"`** inside `"chat"` for that group message — use that (including the minus sign) as `chat_id`.
 
 ## 2. Configuration
 

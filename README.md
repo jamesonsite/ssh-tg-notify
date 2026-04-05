@@ -67,64 +67,50 @@ If `getUpdates` shows `"ok":true` but `"result":[]` (empty), you did not message
 2. Send a normal message in the group (some bots need `/start@YourBotName` once).
 3. Call `getUpdates` again and read the **`"id"`** inside `"chat"` for that group message — use that (including the minus sign) as `chat_id`.
 
-## 2. Configuration
+## 2. Install (clone from GitHub — usual path)
 
-Copy the template from this repository ([`config.example.yaml`](config.example.yaml)) to `/etc/sshnotify/config.yaml`. It is **not** an empty file: it includes all sections and defaults.
+Everything you need is in the repo. You **do not** manually copy templates into `/etc`: the setup script creates **`config.yaml`** in the clone (from `config.example.yaml`). That file is **gitignored** so your token is never committed.
 
-**You normally only edit:**
+```bash
+sudo apt update && sudo apt install -y git golang-go
+git clone https://github.com/jamesonsite/ssh-tg-notify.git
+cd ssh-tg-notify
+sudo ./scripts/setup-server.sh
+nano config.yaml
+```
+
+Set **`telegram.bot_token`** and **`telegram.chat_id`** in `config.yaml`, save, then:
+
+```bash
+sudo systemctl enable --now sshnotify
+```
+
+After you change `config.yaml` later: `sudo systemctl restart sshnotify`.
+
+**What `setup-server.sh` does:** creates `config.yaml` if missing, builds `sshnotify` with Go (or uses a pre-placed `./sshnotify` binary), installs it to `/usr/local/bin`, and registers `systemd` to read config from **this clone’s** `config.yaml`.
+
+**No Go on the server:** download a [release](https://github.com/jamesonsite/ssh-tg-notify/releases) tarball, extract it, put the `sshnotify` binary in the **clone root** next to `config.example.yaml`, then run `sudo ./scripts/setup-server.sh` again (it will skip the build and install the existing binary). Or extract the release tarball alone (it includes `scripts/setup-server.sh` and the binary):
+
+```bash
+mkdir -p /opt/ssh-tg-notify && cd /opt/ssh-tg-notify
+curl -fsSL -o /tmp/s.tgz "https://github.com/jamesonsite/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz"
+tar -xzf /tmp/s.tgz
+sudo ./scripts/setup-server.sh
+nano config.yaml
+sudo systemctl enable --now sshnotify
+```
+
+(Adjust version and `amd64` / `arm64` in the URL to match your release and CPU.)
+
+## 3. What to put in `config.yaml`
 
 | Field | Value |
 | --- | --- |
 | `telegram.bot_token` | Full token from BotFather (keep YAML quotes). |
 | `telegram.chat_id` | Chat id as a **string**, e.g. `"123456789"`. |
-| `server.label` | Optional display name in messages; leave `""` to use the machine hostname. |
+| `server.label` | Optional display name in messages; leave `""` to use the hostname. |
 
-Leave the rest unchanged unless you need file-based logs (see [RHEL / Rocky / Alma](#rhel--rocky--alma-optional-auth-log)).
-
-## 3. Install
-
-Use **either** a release tarball **or** build from source.
-
-### Option A — Release binary (recommended)
-
-No Go or Git required on the server—only `curl` and `tar`.
-
-1. Open [Releases](https://github.com/jamesonsite/ssh-tg-notify/releases), pick a version, download **`sshnotify_<version>_linux_amd64.tar.gz`** (or `arm64` on ARM).
-
-2. On the server (adjust URL and filename to match the release you chose):
-
-```bash
-curl -fsSL -o /tmp/sshnotify.tgz "https://github.com/jamesonsite/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz"
-tar -xzf /tmp/sshnotify.tgz -C /tmp
-sudo install -m 0755 /tmp/sshnotify /usr/local/bin/sshnotify
-sudo mkdir -p /etc/sshnotify
-sudo install -m 0600 /tmp/config.example.yaml /etc/sshnotify/config.yaml
-sudo nano /etc/sshnotify/config.yaml
-sudo install -m 0644 /tmp/sshnotify.service /etc/systemd/system/sshnotify.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now sshnotify
-```
-
-### Option B — Build from source on the server
-
-Install **Git** to clone the repo and **Go** only to compile; the running service uses the compiled binary, not Go at runtime.
-
-```bash
-sudo apt update
-sudo apt install -y git golang-go
-git clone https://github.com/jamesonsite/ssh-tg-notify.git
-cd ssh-tg-notify
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sshnotify ./cmd/sshnotify
-sudo install -m 0755 sshnotify /usr/local/bin/sshnotify
-sudo mkdir -p /etc/sshnotify
-sudo install -m 0600 config.example.yaml /etc/sshnotify/config.yaml
-sudo nano /etc/sshnotify/config.yaml
-sudo cp deploy/sshnotify.service /etc/systemd/system/sshnotify.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now sshnotify
-```
-
-On non-Debian systems, install `git` and a recent Go toolchain with that distro’s packages or from [go.dev](https://go.dev/dl/).
+See [Configuration reference](#configuration-reference) for journal vs auth log options.
 
 ## RHEL / Rocky / Alma (optional auth log)
 
@@ -140,7 +126,7 @@ authlog:
 
 ## Permissions
 
-The packaged `systemd` unit runs `sshnotify` as root so it can read **journald** or **auth** logs. To harden later, you can run as a dedicated user with membership in `systemd-journal` or `adm`, depending on your distro.
+The `systemd` unit runs `sshnotify` as root so it can read **journald** or **auth** logs. To harden later, use a dedicated user plus `systemd-journal` or `adm` membership, depending on your distro.
 
 ## Configuration reference
 
@@ -159,9 +145,11 @@ The packaged `systemd` unit runs `sshnotify` as root so it can read **journald**
 ## Command line
 
 ```text
-sshnotify -config /etc/sshnotify/config.yaml
+sshnotify -config /path/to/config.yaml
 sshnotify -version
 ```
+
+The service uses the `config.yaml` inside your clone (path is written by `setup-server.sh`).
 
 ## Contributing & forks
 

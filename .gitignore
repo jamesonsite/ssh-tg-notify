@@ -1,5 +1,6 @@
 /sshnotify
 /sshnotify.exe
+/config.yaml
 *.exe
 dist/
 .idea/

@@ -11,7 +11,9 @@ Issues and pull requests are welcome.
 ## Releasing
 
 1. Tag a version: `git tag v0.1.0` then `git push origin v0.1.0`.
-2. The [release workflow](.github/workflows/release.yml) builds Linux **amd64** and **arm64** tarballs and attaches them to the GitHub Release.
+2. The [release workflow](.github/workflows/release.yml) builds Linux **amd64** and **arm64** tarballs (binary, `config.example.yaml`, `scripts/setup-server.sh`, reference unit) and attaches them to the GitHub Release.
+
+End users extract a tarball and run `sudo ./scripts/setup-server.sh` — no separate “copy template to `/etc`” step.
 
 ## Publishing from Windows (maintainers)
 

@@ -1,3 +1,6 @@
+# Copy to config.yaml (or run scripts/setup-server.sh — it creates config.yaml for you).
+# config.yaml is gitignored so tokens are not committed.
+
 telegram:
   bot_token: "123456:REPLACE_ME"
   chat_id: "123456789" # use @userinfobot or getUpdates; string keeps large IDs safe

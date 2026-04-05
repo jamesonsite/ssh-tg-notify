@@ -1,3 +1,6 @@
+# Reference unit only. Prefer: sudo ./scripts/setup-server.sh (uses config.yaml in the clone).
+# Or point ExecStart -config at your real config path.
+
 [Unit]
 Description=SSH login Telegram notifier
 Documentation=https://github.com/jamesonsite/ssh-tg-notify

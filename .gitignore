@@ -1,0 +1,9 @@
+/sshnotify
+/sshnotify.exe
+*.exe
+dist/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+/vendor/

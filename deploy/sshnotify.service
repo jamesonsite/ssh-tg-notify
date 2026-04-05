@@ -1,0 +1,18 @@
+[Unit]
+Description=SSH login Telegram notifier
+Documentation=https://github.com/james/ssh-tg-notify
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/sshnotify -config /etc/sshnotify/config.yaml
+Restart=on-failure
+RestartSec=5
+
+# Optional: put TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID here and use envsubst in config,
+# or keep secrets only in config.yaml with chmod 600.
+# EnvironmentFile=-/etc/sshnotify/environment
+
+[Install]
+WantedBy=multi-user.target

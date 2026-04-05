@@ -1,0 +1,40 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build release tarballs
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -eux
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            odir="pack-linux-${arch}"
+            mkdir -p "$odir"
+            GOOS=linux GOARCH=$arch CGO_ENABLED=0 go build -trimpath \
+              -ldflags="-s -w -X main.version=${TAG}" \
+              -o "$odir/sshnotify" ./cmd/sshnotify
+            cp config.example.yaml "$odir/"
+            cp deploy/sshnotify.service "$odir/"
+            ( cd "$odir" && tar -czf "../dist/sshnotify_${TAG}_linux_${arch}.tar.gz" \
+              sshnotify config.example.yaml sshnotify.service )
+          done
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

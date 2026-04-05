@@ -1,0 +1,22 @@
+telegram:
+  bot_token: "123456:REPLACE_ME"
+  chat_id: "123456789" # use @userinfobot or getUpdates; string keeps large IDs safe
+
+server:
+  label: "" # optional display name; defaults to hostname
+
+# Journal is on by default (systemd). Set enabled: false to turn off.
+journal:
+  enabled: true
+  binary: journalctl
+  # Optional override; default follows sshd comm in the journal.
+  # args: ["-f", "-n", "0", "-o", "cat", "-u", "ssh"]
+
+# Classic file-based auth log (Debian/Ubuntu auth.log, RHEL /var/log/secure).
+authlog:
+  enabled: false
+  path: /var/log/auth.log
+
+notify:
+  on_success: true
+  dedupe_seconds: 3 # same user+source+method within this window is one alert

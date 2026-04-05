@@ -1,49 +1,50 @@
 # ssh-tg-notify
 
-Small Linux agent that watches **successful SSH logins** and sends a **Telegram** message for each one. It is meant for homelab and small fleets: one static binary, `systemd` service, YAML config, no runtime beyond the OS.
+Linux daemon that detects **successful SSH logins** and sends a **Telegram** message for each one. Ships as a small static binary plus a `systemd` unit and a YAML config—no language runtime on the server after install.
+
+## Requirements
+
+- Linux with **systemd** (typical for most VPS images).
+- **journald** (default) or a readable auth log file (e.g. `/var/log/auth.log`, `/var/log/secure`).
+- Outbound HTTPS to `api.telegram.org`.
+- Usually runs as **root** so it can read the journal or auth logs (see [Permissions](#permissions)).
 
 ## How it works
 
-- **Primary input:** `journalctl` (follow mode), filtered to `sshd` by default (`_COMM=sshd`). Override `journal.args` if your distro logs differently.
-- **Optional input:** plain-text auth log file (e.g. `/var/log/auth.log` or `/var/log/secure`).
-- **Detection:** parses OpenSSH `Accepted …` lines (password, publickey, etc.).
-- **Telegram:** outbound `sendMessage` only (no webhooks on the server).
+- Follows **`journalctl`** for `sshd` by default, or optionally tails a log file.
+- Parses OpenSSH **`Accepted …`** lines (password, publickey, etc.); not raw TCP connects.
+- Sends alerts with the Telegram Bot API (`sendMessage` only).
 
-## Publish to GitHub (first time)
+## 1. Create the Telegram bot
 
-GitHub requires a one-time login for the CLI (OAuth or a token). After that, creating the repo and pushing is automated:
+1. Talk to [@BotFather](https://t.me/BotFather), create a bot, copy the **token** (format `123456789:AAH…`).
+2. Start a chat with your bot, send any message, then obtain your **chat id** (e.g. [@userinfobot](https://t.me/userinfobot) or the `getUpdates` API). Use the numeric id; group ids are often negative (e.g. `-100…`).
 
-```powershell
-cd E:\GitHub\ssh-tg-notify
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-github.ps1
-```
+## 2. Configuration
 
-The script runs `gh auth login --web` if needed, creates `jamesonsite/ssh-tg-notify` if it does not exist, sets `origin`, and runs `git push -u origin main`. Alternatively, set `GH_TOKEN` (classic PAT with `repo` scope) and run the same script with no browser step.
+Copy the template from this repository ([`config.example.yaml`](config.example.yaml)) to `/etc/sshnotify/config.yaml`. It is **not** an empty file: it includes all sections and defaults.
 
-## Quick setup
+**You normally only edit:**
 
-1. Create a bot with [@BotFather](https://t.me/BotFather), copy the **token** (looks like `123456789:AAH...`).
-2. Open a chat with your bot, send any message, then get your **chat id** (e.g. [@userinfobot](https://t.me/userinfobot) or Telegram `getUpdates` once). Use the **numeric id** (and for groups, often a negative id like `-100...`).
-
-### Config file (not blank)
-
-You never start from an empty file. Use the **template** [`config.example.yaml`](config.example.yaml) from this repo: it already lists every section with sane defaults. After copying it to `/etc/sshnotify/config.yaml`, you normally change **only**:
-
-| Field | What to put |
+| Field | Value |
 | --- | --- |
-| `telegram.bot_token` | Paste the full token from BotFather (keep the quotes). |
-| `telegram.chat_id` | Your id as a **string** in quotes, e.g. `"123456789"` (avoids large-number issues). |
-| `server.label` | Optional friendly name in Telegram messages; leave `""` to use the server hostname. |
+| `telegram.bot_token` | Full token from BotFather (keep YAML quotes). |
+| `telegram.chat_id` | Chat id as a **string**, e.g. `"123456789"`. |
+| `server.label` | Optional display name in messages; leave `""` to use the machine hostname. |
 
-Everything else can stay as in the example unless you are on RHEL-style logs (see below).
+Leave the rest unchanged unless you need file-based logs (see [RHEL / Rocky / Alma](#rhel--rocky--alma-optional-auth-log)).
 
-Pick **one** install path on the server.
+## 3. Install
 
-### A — Prebuilt binary (no Go on the server)
+Use **either** a release tarball **or** build from source.
 
-The running agent is a **single executable**; end servers do **not** need Go installed if you use a [release](https://github.com/jamesonsite/ssh-tg-notify/releases) tarball (build the release once via GitHub Actions, or build on your PC and upload the binary).
+### Option A — Release binary (recommended)
 
-Replace `v0.1.0` with the tag you published:
+No Go or Git required on the server—only `curl` and `tar`.
+
+1. Open [Releases](https://github.com/jamesonsite/ssh-tg-notify/releases), pick a version, download **`sshnotify_<version>_linux_amd64.tar.gz`** (or `arm64` on ARM).
+
+2. On the server (adjust URL and filename to match the release you chose):
 
 ```bash
 curl -fsSL -o /tmp/sshnotify.tgz "https://github.com/jamesonsite/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz"
@@ -51,17 +52,15 @@ tar -xzf /tmp/sshnotify.tgz -C /tmp
 sudo install -m 0755 /tmp/sshnotify /usr/local/bin/sshnotify
 sudo mkdir -p /etc/sshnotify
 sudo install -m 0600 /tmp/config.example.yaml /etc/sshnotify/config.yaml
-sudo nano /etc/sshnotify/config.yaml   # set bot_token and chat_id
+sudo nano /etc/sshnotify/config.yaml
 sudo install -m 0644 /tmp/sshnotify.service /etc/systemd/system/sshnotify.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now sshnotify
 ```
 
-`curl` / `tar` are standard; **no** `git` or `golang-go`.
+### Option B — Build from source on the server
 
-### B — Build on the server (needs Go once)
-
-`git` downloads the source. **`golang-go`** is Debian/Ubuntu’s **Go compiler package**—it is only used to **compile** `sshnotify` on that machine. After `go build`, the binary does not need Go at runtime; you could remove `golang-go` afterward if you wanted (uncommon).
+Install **Git** to clone the repo and **Go** only to compile; the running service uses the compiled binary, not Go at runtime.
 
 ```bash
 sudo apt update
@@ -72,17 +71,17 @@ CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sshnotify ./cmd/sshnotify
 sudo install -m 0755 sshnotify /usr/local/bin/sshnotify
 sudo mkdir -p /etc/sshnotify
 sudo install -m 0600 config.example.yaml /etc/sshnotify/config.yaml
-sudo nano /etc/sshnotify/config.yaml   # set bot_token and chat_id
+sudo nano /etc/sshnotify/config.yaml
 sudo cp deploy/sshnotify.service /etc/systemd/system/sshnotify.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now sshnotify
 ```
 
-If you do not want Go on the VPS, use path **A** or build the Linux binary on Windows (`GOOS=linux GOARCH=amd64 go build ...`) and copy `sshnotify` over with `scp`.
+On non-Debian systems, install `git` and a recent Go toolchain with that distro’s packages or from [go.dev](https://go.dev/dl/).
 
-### RHEL / Rocky / Alma (optional auth log)
+## RHEL / Rocky / Alma (optional auth log)
 
-If you prefer file-based logs instead of or in addition to the journal:
+If you rely on `/var/log/secure` instead of the journal for SSH lines:
 
 ```yaml
 journal:
@@ -92,34 +91,34 @@ authlog:
   path: /var/log/secure
 ```
 
-### Permissions
+## Permissions
 
-Reading the journal or `/var/log/auth.log` usually requires **root** (the shipped unit runs the binary as root). Tighten later with group membership (`systemd-journal`, `adm`) if you harden the service account.
+The packaged `systemd` unit runs `sshnotify` as root so it can read **journald** or **auth** logs. To harden later, you can run as a dedicated user with membership in `systemd-journal` or `adm`, depending on your distro.
 
 ## Configuration reference
 
 | Field | Meaning |
 | --- | --- |
 | `telegram.bot_token` | Bot token from BotFather |
-| `telegram.chat_id` | Destination chat (string; safe for large ids) |
-| `server.label` | Optional label in messages (default: hostname) |
+| `telegram.chat_id` | Destination chat (string) |
+| `server.label` | Optional label (default: hostname) |
 | `journal.enabled` | Follow journal (default **on** if omitted) |
-| `journal.args` | Full `journalctl` argument list after the binary name |
+| `journal.args` | Full `journalctl` argument list |
 | `authlog.enabled` | Tail a file (default **off**) |
 | `authlog.path` | e.g. `/var/log/auth.log` or `/var/log/secure` |
-| `notify.on_success` | Send on successful `Accepted` lines (default **on** if omitted) |
-| `notify.dedupe_seconds` | Collapse duplicate user+source+method within this window |
+| `notify.on_success` | Notify on successful `Accepted` lines (default **on** if omitted) |
+| `notify.dedupe_seconds` | Suppress duplicate user+source+method within this window |
 
-## CLI
+## Command line
 
 ```text
 sshnotify -config /etc/sshnotify/config.yaml
 sshnotify -version
 ```
 
-## Go module path
+## Contributing & forks
 
-The module is [`github.com/jamesonsite/ssh-tg-notify`](https://github.com/jamesonsite/ssh-tg-notify). If you fork, run `go mod edit -module github.com/<you>/ssh-tg-notify` and replace import paths to match.
+Releases, tags, and developer notes: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

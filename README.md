@@ -9,6 +9,17 @@ Small Linux agent that watches **successful SSH logins** and sends a **Telegram*
 - **Detection:** parses OpenSSH `Accepted …` lines (password, publickey, etc.).
 - **Telegram:** outbound `sendMessage` only (no webhooks on the server).
 
+## Publish to GitHub (first time)
+
+GitHub requires a one-time login for the CLI (OAuth or a token). After that, creating the repo and pushing is automated:
+
+```powershell
+cd E:\GitHub\ssh-tg-notify
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-github.ps1
+```
+
+The script runs `gh auth login --web` if needed, creates `jamesonsite/ssh-tg-notify` if it does not exist, sets `origin`, and runs `git push -u origin main`. Alternatively, set `GH_TOKEN` (classic PAT with `repo` scope) and run the same script with no browser step.
+
 ## Quick setup
 
 1. Create a bot with [@BotFather](https://t.me/BotFather), copy the **token**.

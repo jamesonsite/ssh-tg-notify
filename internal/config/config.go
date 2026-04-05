@@ -21,6 +21,8 @@ type Config struct {
 type Telegram struct {
 	BotToken string `yaml:"bot_token"`
 	ChatID   string `yaml:"chat_id"`
+	// WelcomeOnStart: when true or omitted, long-poll /start and send setup text + BotFather button.
+	WelcomeOnStart *bool `yaml:"welcome_on_start"`
 }
 
 type Server struct {
@@ -58,6 +60,14 @@ func (c *Config) AuthLogEnabled() bool {
 		return false
 	}
 	return *c.AuthLog.Enabled
+}
+
+// WelcomeOnStart reports whether to answer /start in Telegram (default true).
+func (c *Config) WelcomeOnStart() bool {
+	if c.Telegram.WelcomeOnStart == nil {
+		return true
+	}
+	return *c.Telegram.WelcomeOnStart
 }
 
 // Defaults fills derived defaults after YAML load.

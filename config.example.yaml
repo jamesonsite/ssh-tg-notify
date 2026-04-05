@@ -4,6 +4,7 @@
 telegram:
   bot_token: "123456:REPLACE_ME"
   chat_id: "123456789" # use @userinfobot or getUpdates; string keeps large IDs safe
+  # welcome_on_start: true   # default: reply to /start with setup text + Open BotFather button (set false to disable getUpdates polling)
 
 server:
   label: "" # optional display name; defaults to hostname

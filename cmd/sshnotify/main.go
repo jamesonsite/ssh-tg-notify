@@ -53,6 +53,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	if cfg.WelcomeOnStart() {
+		go func() {
+			log.Println("telegram: /start welcome poller on")
+			tg.RunWelcomePoller(ctx)
+		}()
+	}
+
 	lines := make(chan string, 256)
 
 	if cfg.JournalEnabled() {

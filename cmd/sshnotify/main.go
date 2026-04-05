@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/james/ssh-tg-notify/internal/config"
-	"github.com/james/ssh-tg-notify/internal/dedupe"
-	"github.com/james/ssh-tg-notify/internal/follow"
-	"github.com/james/ssh-tg-notify/internal/format"
-	"github.com/james/ssh-tg-notify/internal/notify"
-	"github.com/james/ssh-tg-notify/internal/sshparse"
+	"github.com/jamesonsite/ssh-tg-notify/internal/config"
+	"github.com/jamesonsite/ssh-tg-notify/internal/dedupe"
+	"github.com/jamesonsite/ssh-tg-notify/internal/follow"
+	"github.com/jamesonsite/ssh-tg-notify/internal/format"
+	"github.com/jamesonsite/ssh-tg-notify/internal/notify"
+	"github.com/jamesonsite/ssh-tg-notify/internal/sshparse"
 )
 
 // Set via -ldflags "-X main.version=..." at release build time.

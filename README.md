@@ -27,7 +27,7 @@ sudo nano /etc/sshnotify/config.yaml   # set bot_token and chat_id
 **From a release tarball** (after you publish a GitHub Release):
 
 ```bash
-curl -fsSL -o /tmp/sshnotify.tgz "https://github.com/<you>/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz"
+curl -fsSL -o /tmp/sshnotify.tgz "https://github.com/jamesonsite/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz"
 sudo tar -xzf /tmp/sshnotify.tgz -C /usr/local/bin sshnotify
 sudo tar -xzf /tmp/sshnotify.tgz -C /tmp config.example.yaml sshnotify.service
 sudo install -m 0644 /tmp/sshnotify.service /etc/systemd/system/sshnotify.service
@@ -38,7 +38,7 @@ sudo systemctl enable --now sshnotify
 **From source** (needs Go 1.22+):
 
 ```bash
-git clone https://github.com/<you>/ssh-tg-notify.git
+git clone https://github.com/jamesonsite/ssh-tg-notify.git
 cd ssh-tg-notify
 make build
 sudo make install
@@ -86,13 +86,7 @@ sshnotify -version
 
 ## Go module path
 
-The module is `github.com/james/ssh-tg-notify`. If you fork under another GitHub user or org, run:
-
-```bash
-go mod edit -module github.com/<you>/ssh-tg-notify
-```
-
-Then replace import paths (e.g. `grep -R github.com/james/ssh-tg-notify`).
+The module is [`github.com/jamesonsite/ssh-tg-notify`](https://github.com/jamesonsite/ssh-tg-notify). If you fork, run `go mod edit -module github.com/<you>/ssh-tg-notify` and replace import paths to match.
 
 ## License
 

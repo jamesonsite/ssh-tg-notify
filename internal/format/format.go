@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/james/ssh-tg-notify/internal/sshparse"
+	"github.com/jamesonsite/ssh-tg-notify/internal/sshparse"
 )
 
 // LoginMessage builds a plain-text Telegram body for a successful SSH login.

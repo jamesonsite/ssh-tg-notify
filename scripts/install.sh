@@ -2,7 +2,7 @@
 # Install sshnotify binary from GitHub Releases (Linux amd64/arm64).
 set -euo pipefail
 
-REPO="${REPO:-james/ssh-tg-notify}"
+REPO="${REPO:-jamesonsite/ssh-tg-notify}"
 PREFIX="${PREFIX:-/usr/local}"
 VERSION="${VERSION:-}"
 

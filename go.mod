@@ -1,4 +1,4 @@
-module github.com/james/ssh-tg-notify
+module github.com/jamesonsite/ssh-tg-notify
 
 go 1.22
 

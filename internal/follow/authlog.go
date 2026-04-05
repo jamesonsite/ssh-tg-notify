@@ -1,7 +1,6 @@
 package follow
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -42,7 +41,6 @@ func tailOneFile(ctx context.Context, path string, lines chan<- string) error {
 		return err
 	}
 
-	r := bufio.NewReader(f)
 	var carry []byte
 	tick := time.NewTicker(250 * time.Millisecond)
 	defer tick.Stop()

@@ -1,6 +1,6 @@
 [Unit]
 Description=SSH login Telegram notifier
-Documentation=https://github.com/james/ssh-tg-notify
+Documentation=https://github.com/jamesonsite/ssh-tg-notify
 After=network-online.target
 Wants=network-online.target
 

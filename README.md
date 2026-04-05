@@ -12,7 +12,7 @@ Notifies Telegram when someone **successfully logs in over SSH** on a Linux host
 2. **Chat id** → put in `telegram.chat_id` as a quoted string, e.g. `"123456789"`.
    - DM: message [@userinfobot](https://t.me/userinfobot), use the **Id** it shows.
    - Or message your bot, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and read `"chat":{"id":…}` in the JSON (groups are often negative ids like `-100…`).
-3. With ssh-tg-notify running, anyone who taps **Start** in Telegram with your bot gets setup instructions and an **Open BotFather** button (on by default). Set `telegram.welcome_on_start: false` to turn that off. **Same bot token on many servers:** only one host should leave this on—otherwise several daemons would share `getUpdates` and it is unreliable.
+3. With ssh-tg-notify running, anyone who taps **Start** in Telegram with your bot gets setup instructions and an **Open BotFather** button (on by default). Set `telegram.welcome_on_start: false` to turn that off. **Same bot token on many servers:** only one host should leave this on—otherwise several daemons would share `getUpdates` and it is unreliable. The service calls `deleteWebhook` on startup so `/start` works (a leftover webhook would block `getUpdates`).
 
 ---
 

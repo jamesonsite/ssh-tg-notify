@@ -27,6 +27,15 @@ Then install ssh-tg-notify on each server and run the systemd service.`
 // RunWelcomePoller long-polls getUpdates and replies to /start with setup help + BotFather link.
 // Blocks until ctx is cancelled.
 func (t *Telegram) RunWelcomePoller(ctx context.Context) {
+	// If this bot ever had a webhook set, getUpdates receives nothing until it is removed.
+	cctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	if err := t.deleteWebhook(cctx); err != nil {
+		log.Printf("telegram deleteWebhook: %v", err)
+	} else {
+		log.Printf("telegram: deleteWebhook ok (getUpdates enabled)")
+	}
+	cancel()
+
 	longClient := &http.Client{Timeout: 55 * time.Second}
 	offset := 0
 	for {
@@ -38,6 +47,7 @@ func (t *Telegram) RunWelcomePoller(ctx context.Context) {
 			if ctx.Err() != nil {
 				return
 			}
+			log.Printf("getUpdates: %v", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
@@ -54,9 +64,40 @@ func (t *Telegram) RunWelcomePoller(ctx context.Context) {
 			cancel()
 			if err != nil {
 				log.Printf("welcome reply: %v", err)
+			} else {
+				log.Printf("welcome reply sent to chat_id=%s", chatID)
 			}
 		}
 	}
+}
+
+func (t *Telegram) deleteWebhook(ctx context.Context) error {
+	body := strings.NewReader(`{"drop_pending_updates":false}`)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.endpoint("deleteWebhook"), body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := t.client().Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
+	}
+	var api struct {
+		OK          bool   `json:"ok"`
+		Description string `json:"description"`
+	}
+	if err := json.Unmarshal(b, &api); err != nil {
+		return err
+	}
+	if !api.OK {
+		return fmt.Errorf("telegram: %s", api.Description)
+	}
+	return nil
 }
 
 func isStartCommand(text string) bool {
@@ -102,13 +143,17 @@ func (t *Telegram) getUpdates(ctx context.Context, client *http.Client, offset i
 		return nil, fmt.Errorf("getUpdates HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
 	}
 	var out struct {
-		OK     bool     `json:"ok"`
-		Result []update `json:"result"`
+		OK          bool     `json:"ok"`
+		Result      []update `json:"result"`
+		Description string   `json:"description"`
 	}
 	if err := json.Unmarshal(b, &out); err != nil {
 		return nil, err
 	}
 	if !out.OK {
+		if out.Description != "" {
+			return nil, fmt.Errorf("getUpdates: %s", out.Description)
+		}
 		return nil, fmt.Errorf("getUpdates not ok")
 	}
 	return out.Result, nil

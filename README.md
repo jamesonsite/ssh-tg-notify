@@ -50,6 +50,7 @@ Config changes: `sudo systemctl restart sshnotify`.
 | --- | --- |
 | `telegram.bot_token` | From BotFather |
 | `telegram.chat_id` | String, e.g. `"123456789"` |
+| `telegram.welcome_on_start` | `true` (default): answer `/start` with help + BotFather button; `false` to skip `getUpdates` polling |
 | `server.label` | Optional; empty = hostname |
 | `journal.*` | Default: follow `sshd` in journal |
 | `authlog.*` | Set `enabled: true` and `path` for file-based logs (e.g. `/var/log/secure`) |

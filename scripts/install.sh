@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Install sshnotify binary from GitHub Releases (Linux amd64/arm64).
+# Install sshnotify from GitHub Releases (Linux amd64/arm64). Uses latest stable asset URL.
 set -euo pipefail
 
 REPO="${REPO:-jamesonsite/ssh-tg-notify}"
 PREFIX="${PREFIX:-/usr/local}"
-VERSION="${VERSION:-}"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -16,17 +15,10 @@ case "$arch" in
   *) echo "unsupported arch: $arch" >&2; exit 1 ;;
 esac
 
-if [[ -z "$VERSION" || "$VERSION" == "latest" ]]; then
-  VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')"
-fi
-[[ -n "$VERSION" ]] || { echo "could not resolve version" >&2; exit 1; }
-
-asset="sshnotify_${VERSION#v}_linux_${goarch}.tar.gz"
-url="https://github.com/${REPO}/releases/download/${VERSION}/${asset}"
-
+url="https://github.com/${REPO}/releases/latest/download/sshnotify_linux_${goarch}.tar.gz"
 echo "Downloading ${url}"
-curl -fsSL "$url" -o "$tmp/$asset"
-tar -xzf "$tmp/$asset" -C "$tmp"
+curl -fsSL "$url" -o "$tmp/bundle.tgz"
+tar -xzf "$tmp/bundle.tgz" -C "$tmp"
 
 install -d "$PREFIX/bin"
 install -m 0755 "$tmp/sshnotify" "$PREFIX/bin/sshnotify"

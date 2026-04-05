@@ -32,7 +32,8 @@ jobs:
             cp deploy/sshnotify.service "$odir/"
             cp scripts/setup-server.sh "$odir/scripts/"
             chmod +x "$odir/scripts/setup-server.sh"
-            ( cd "$odir" && tar -czf "../dist/sshnotify_${TAG}_linux_${arch}.tar.gz" \
+            # Stable names so README can use .../releases/latest/download/... without editing.
+            ( cd "$odir" && tar -czf "../dist/sshnotify_linux_${arch}.tar.gz" \
               sshnotify config.example.yaml sshnotify.service scripts/setup-server.sh )
           done
       - uses: softprops/action-gh-release@v2

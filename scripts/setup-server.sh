@@ -24,17 +24,23 @@ else
 fi
 
 BIN="/usr/local/bin/sshnotify"
-if [[ -x "${REPO_ROOT}/sshnotify" ]]; then
-  echo "Installing existing ${REPO_ROOT}/sshnotify -> ${BIN}"
-  install -m 0755 "${REPO_ROOT}/sshnotify" "${BIN}"
-elif command -v go >/dev/null 2>&1; then
+# Prefer a fresh Go build when source exists (avoids re-installing a stale ./sshnotify from an old tarball).
+if command -v go >/dev/null 2>&1 && [[ -f "${REPO_ROOT}/cmd/sshnotify/main.go" ]]; then
   echo "Building sshnotify with Go..."
   ( cd "$REPO_ROOT" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sshnotify ./cmd/sshnotify )
   install -m 0755 "${REPO_ROOT}/sshnotify" "${BIN}"
+elif [[ -x "${REPO_ROOT}/sshnotify" ]]; then
+  echo "Installing ${REPO_ROOT}/sshnotify -> ${BIN}"
+  echo "(Tarball-only tree: to upgrade, curl the latest release tarball here again and re-run this script, or git clone the repo and use Go.)"
+  install -m 0755 "${REPO_ROOT}/sshnotify" "${BIN}"
+elif command -v go >/dev/null 2>&1; then
+  echo "go is installed but ${REPO_ROOT}/cmd/sshnotify/main.go is missing (not a full git checkout)." >&2
+  echo "Download a release tarball with sshnotify inside, or: git clone https://github.com/jamesonsite/ssh-tg-notify.git" >&2
+  exit 1
 else
   echo "No ./sshnotify binary and no 'go' in PATH." >&2
-  echo "Either: apt install golang-go (or install Go), then re-run this script," >&2
-  echo "Or: download the Linux sshnotify binary from GitHub Releases into this folder as ./sshnotify, chmod +x it, then re-run." >&2
+  echo "Either: apt install golang-go and git clone this repo, then re-run," >&2
+  echo "Or: curl the latest sshnotify_linux_*.tar.gz from GitHub Releases, extract here, re-run." >&2
   exit 1
 fi
 

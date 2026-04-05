@@ -27,17 +27,17 @@ nano config.yaml   # token + chat_id
 sudo systemctl enable --now sshnotify
 ```
 
-**From a [release](https://github.com/jamesonsite/ssh-tg-notify/releases) tarball** (no Go): extract, then same `setup-server.sh` → `config.yaml` → `systemctl`:
+**From a release tarball** (no Go): only works after [Releases](https://github.com/jamesonsite/ssh-tg-notify/releases) lists a version with `sshnotify_*_linux_*.tar.gz`. If there is nothing there yet, use **From git** above, or wait until CI finishes after a tag is pushed.
 
 ```bash
 mkdir -p /opt/ssh-tg-notify && cd /opt/ssh-tg-notify
-curl -fsSL -o /tmp/t.tgz 'https://github.com/jamesonsite/ssh-tg-notify/releases/download/<TAG>/sshnotify_<TAG>_linux_amd64.tar.gz'
+curl -fsSL -o /tmp/t.tgz 'https://github.com/jamesonsite/ssh-tg-notify/releases/download/v0.1.0/sshnotify_v0.1.0_linux_amd64.tar.gz'
 tar -xzf /tmp/t.tgz
 sudo ./scripts/setup-server.sh && nano config.yaml
 sudo systemctl enable --now sshnotify
 ```
 
-Use `arm64` in the filename on ARM. Replace `<TAG>` (e.g. `v0.1.0`).
+On ARM use `…_linux_arm64.tar.gz`. For a newer version, change both path segments (`…/download/v0.2.0/sshnotify_v0.2.0_linux_amd64.tar.gz`).
 
 Config changes: `sudo systemctl restart sshnotify`.
 
